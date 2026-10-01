@@ -1,9 +1,12 @@
 """内存数据仓库：给每个业务模块准备一份可筛选、可流转的示例数据。
 
 真实项目里这里会换成数据库访问层；当前实现只依赖标准库，保证克隆下来就能起。
+调度闭环涉及车辆台账、任务与出勤单多张表的联动写入，store 上的 RLock 就是
+这层“数据库事务”的边界：接单校验、占用司机、回写任务必须在同一把锁内完成。
 """
 from __future__ import annotations
 
+import threading
 from typing import Any
 
 from app.seed import SEED_ROWS
@@ -11,9 +14,18 @@ from app.seed import SEED_ROWS
 
 class Store:
     def __init__(self) -> None:
+        # 可重入：一个事务里调用别的服务方法时不会把自己锁死
+        self.lock = threading.RLock()
         self._tables: dict[str, list[dict[str, Any]]] = {
             name: [dict(row) for row in rows] for name, rows in SEED_ROWS.items()
         }
+
+    def reset(self) -> None:
+        """按种子数据重建全部表，仅供测试用。"""
+        with self.lock:
+            self._tables = {
+                name: [dict(row) for row in rows] for name, rows in SEED_ROWS.items()
+            }
 
     def module_names(self) -> list[str]:
         return sorted(self._tables)

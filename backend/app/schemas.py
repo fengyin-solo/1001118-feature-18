@@ -19,6 +19,7 @@ class ActionResult(BaseModel):
     ok: bool
     message: str
     entry: dict[str, Any] | None = None
+    code: str | None = None
 
 
 class EntryPayload(BaseModel):
@@ -26,6 +27,12 @@ class EntryPayload(BaseModel):
 
     values: dict[str, Any] = Field(default_factory=dict)
     remark: str | None = None
+
+
+class DispatchBatchPayload(BaseModel):
+    """并发调度批量派车：每项包含 vehicle_id、task_type、task_id、驾驶员与可选 version。"""
+
+    items: list[dict[str, Any]] = Field(default_factory=list)
 
 
 

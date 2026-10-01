@@ -1,4 +1,4 @@
-"""养护车辆接口：维护养护车辆，覆盖派车出车、收车归库、送修车辆等动作。"""
+"""养护车辆接口：维护车辆台账，覆盖送修、送检、归库等动作；出勤闭环见 /api/dispatch。"""
 from __future__ import annotations
 
 from typing import Any
@@ -13,13 +13,13 @@ router = APIRouter(prefix="/api/vehicle", tags=["养护车辆"])
 service = VehicleService()
 
 LIST_FIELDS = ["车辆编号", "车辆类型", "车牌号", "所属单位", "年检日期", "驾驶员", "当前里程", "车辆状态"]
-STATUSES = ["在库", "出车作业", "维修", "报废"]
+STATUSES = ["在库", "已派车", "上工作业", "维修", "年检中", "报废"]
 
 
 @router.get("", response_model=PageResult[dict])
 def list_entries(
     keyword: str | None = Query(default=None, description="按车辆编号检索"),
-    status: str | None = Query(default=None, description="在库、出车作业、维修、报废"),
+    status: str | None = Query(default=None, description="在库、已派车、上工作业、维修、年检中、报废"),
     page: int = 1,
     size: int = 20,
 ) -> PageResult[dict]:
@@ -50,7 +50,7 @@ def create_entry(payload: EntryPayload) -> ActionResult:
 
 @router.post("/{entry_id}/actions", response_model=ActionResult)
 def run_action(entry_id: int, payload: EntryPayload) -> ActionResult:
-    """对单条养护车辆执行派车出车、收车归库、送修车辆；不允许的动作会被拦下并说明原因。"""
+    """对单台养护车辆执行送修车辆、送检车辆、归库、报废；出勤链上的派车/上工/回库由出勤调度接口驱动。"""
     action = str(payload.values.get("action") or "").strip()
     entry, message = service.run_action(entry_id, action)
     if entry is None:
