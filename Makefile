@@ -1,4 +1,4 @@
-.PHONY: install backend frontend
+.PHONY: install backend frontend verify
 
 install:
 	cd backend && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
@@ -9,3 +9,6 @@ backend:
 
 frontend:
 	cd frontend && npm run dev
+
+verify:
+	cd backend && python3 scripts/verify_dispatch.py

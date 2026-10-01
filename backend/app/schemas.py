@@ -244,3 +244,37 @@ class MaterialEntry(BaseModel):
     field_5: str | None = None  # 进场日期
     field_6: str | None = None  # 存放地点
     field_7: str | None = None  # 材料状态
+
+
+class DispatchAccept(BaseModel):
+    """派车接单入参：车辆 + 任务 + 乐观版本号。"""
+
+    vehicle_id: int = Field(..., description="车辆台账 ID")
+    task_type: str = Field(..., description="任务类型：winter 除雪 / flood 防汛 / patrol 巡查")
+    task_id: int = Field(..., description="任务在各自模块中的 ID")
+    driver: str | None = Field(default=None, description="指定驾驶员；为空时沿用车辆台账驾驶员")
+    emergency: bool | None = Field(default=None, description="是否应急指挥任务；缺省按任务类型/级别推断")
+    expected_version: int | None = Field(default=None, description="车辆台账版本号，做乐观锁校验")
+    client_token: str | None = Field(default=None, description="前端防重复提交令牌")
+    remark: str | None = None
+
+
+class DispatchTransition(BaseModel):
+    """出勤单状态流转入参：上工 / 回库 / 取消。"""
+
+    end_mileage: float | None = Field(default=None, description="回库时的车辆总里程读数（km）")
+    actual_driver: str | None = Field(default=None, description="实际出勤驾驶员，缺省沿用接单驾驶员")
+    remark: str | None = None
+
+
+class OfflineReport(BaseModel):
+    """离线回传入参：按 车辆+任务 联合幂等。"""
+
+    vehicle_id: int
+    task_type: str
+    task_id: int
+    end_mileage: float = Field(..., description="回库里程读数，里程只按一次累计")
+    driver: str | None = None
+    client_token: str | None = None
+    reported_at: str | None = Field(default=None, description="车载终端实际回库时间")
+    remark: str | None = None
